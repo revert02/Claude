@@ -104,6 +104,6 @@ enum TMDBEndpoint: APIEndpoint {
 
 enum TMDBConfig {
     // Replace with your TMDB API key from https://www.themoviedb.org/settings/api
-    static let apiKey = "YOUR_TMDB_API_KEY"
+    static let apiKey = "8ebf6146d38c10e74873f2729e20afde"
     static let imageBaseURL = "https://image.tmdb.org/t/p/"
 }
