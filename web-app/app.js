@@ -4,7 +4,7 @@
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMG_BASE = 'https://image.tmdb.org/t/p/';
-let API_KEY = '';
+let API_KEY = '8ebf6146d38c10e74873f2729e20afde';
 let DEMO_MODE = false;
 
 // Platform definitions
@@ -61,7 +61,9 @@ function imgURL(path, size = 'w500') {
 
 document.addEventListener('DOMContentLoaded', () => {
     const savedKey = localStorage.getItem('theater_api_key');
-    if (savedKey) {
+    if (API_KEY) {
+        startApp();
+    } else if (savedKey) {
         API_KEY = savedKey;
         startApp();
     }
