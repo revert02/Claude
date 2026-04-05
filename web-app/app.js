@@ -325,7 +325,7 @@ async function openDetail(id, mediaType) {
             </div>
 
             <div class="detail-actions">
-                <button class="action-btn primary ${inWatchlist ? 'active' : ''}" id="watchlistBtn" onclick="toggleWatchlistFromDetail(${id}, '${mediaType}', '${escapeHTML(title).replace(/'/g, "\\'")}', '${detail.poster_path || ''}', ${detail.vote_average || 0})">
+                <button class="action-btn primary ${inWatchlist ? 'active' : ''}" id="watchlistBtn" onclick="toggleWatchlistFromDetail(${id}, '${mediaType}', '${escapeHTML(title).replace(/'/g, "\\'")}', '${detail.poster_path || ''}', ${detail.vote_average || 0}, ${JSON.stringify((detail.genres || []).map(g => g.id))})">
                     ${inWatchlist ? '🔖 In Watchlist' : '🔖 Add to Watchlist'}
                 </button>
             </div>
@@ -466,7 +466,26 @@ async function performSearch(query) {
     try {
         let results;
 
-        if (query) {
+        if (query && activeSearchFilters.platforms.size > 0) {
+            // Search + platform filter: fetch both search and discover, intersect
+            const [searchData, discoverMovies, discoverTV] = await Promise.all([
+                tmdbFetch('/search/multi', { query, page: 1 }),
+                tmdbFetch('/discover/movie', {
+                    sort_by: 'popularity.desc', watch_region: 'US',
+                    with_watch_providers: [...activeSearchFilters.platforms].map(k => PLATFORMS[k].id).join('|'),
+                }),
+                tmdbFetch('/discover/tv', {
+                    sort_by: 'popularity.desc', watch_region: 'US',
+                    with_watch_providers: [...activeSearchFilters.platforms].map(k => PLATFORMS[k].id).join('|'),
+                }),
+            ]);
+            const discoverIds = new Set([
+                ...discoverMovies.results.map(r => r.id),
+                ...discoverTV.results.map(r => r.id),
+            ]);
+            results = searchData.results
+                .filter(r => (r.media_type === 'movie' || r.media_type === 'tv') && discoverIds.has(r.id));
+        } else if (query) {
             const data = await tmdbFetch('/search/multi', { query, page: 1 });
             results = data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv');
         } else {
@@ -522,7 +541,7 @@ function searchByGenre(name, id) {
 // Watchlist
 // ============================================
 
-function toggleWatchlistFromDetail(id, mediaType, title, posterPath, rating) {
+function toggleWatchlistFromDetail(id, mediaType, title, posterPath, rating, genreIds) {
     const idx = watchlist.findIndex(w => w.id === id && w.mediaType === mediaType);
     const btn = document.getElementById('watchlistBtn');
 
@@ -533,6 +552,7 @@ function toggleWatchlistFromDetail(id, mediaType, title, posterPath, rating) {
     } else {
         watchlist.push({
             id, mediaType, title, posterPath, rating,
+            genreIds: genreIds || [],
             addedDate: new Date().toISOString(),
             isWatched: false,
         });
@@ -584,7 +604,7 @@ function renderWatchlist() {
     // Filter
     if (watchlistFilter === 'movie') items = items.filter(w => w.mediaType === 'movie');
     else if (watchlistFilter === 'tv') items = items.filter(w => w.mediaType === 'tv');
-    else if (watchlistFilter === 'anime') items = items.filter(w => w.mediaType === 'tv'); // simplified
+    else if (watchlistFilter === 'anime') items = items.filter(w => w.mediaType === 'tv' && w.genreIds?.includes(16));
 
     // Sort
     if (watchlistSort === 'recent') items.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));

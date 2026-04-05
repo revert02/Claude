@@ -5,6 +5,7 @@ struct Genre: Codable, Identifiable, Hashable {
     let name: String
 
     static let animationId = 16
+    static let actionAdventureId = 10759  // TV: Action & Adventure
 
     static let commonGenres: [Genre] = [
         Genre(id: 28, name: "Action"),

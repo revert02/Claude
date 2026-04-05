@@ -29,9 +29,11 @@ class HomeViewModel {
         isLoading = true
         errorMessage = nil
 
+        let region = SidebarViewModel.shared.selectedRegion
+
         async let trendingTask = tmdb.fetchTrending()
-        async let netflixTask = tmdb.discover(mediaType: .movie, providers: [.netflix])
-        async let animeTask = tmdb.discover(mediaType: .tvShow, providers: [.crunchyroll], genres: [Genre.animationId])
+        async let netflixTask = tmdb.discover(mediaType: .movie, providers: [.netflix], region: region)
+        async let animeTask = tmdb.discover(mediaType: .tvShow, providers: [.crunchyroll], genres: [Genre.animationId], region: region)
         async let upcomingTask = tmdb.fetchUpcoming()
         async let popularMoviesTask = tmdb.fetchPopularMovies()
 

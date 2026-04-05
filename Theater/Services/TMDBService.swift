@@ -50,15 +50,15 @@ actor TMDBService {
 
     // MARK: - Watch Providers
 
-    func fetchWatchProviders(id: Int, mediaType: MediaType) async throws -> [StreamingPlatform] {
+    func fetchWatchProviders(id: Int, mediaType: MediaType, region: String = "US") async throws -> [StreamingPlatform] {
         let endpoint: TMDBEndpoint = mediaType == .movie
             ? .movieWatchProviders(id: id)
             : .tvWatchProviders(id: id)
 
         let response: TMDBWatchProviderResponse = try await client.fetch(endpoint)
 
-        guard let usProviders = response.results["US"],
-              let flatrate = usProviders.flatrate else {
+        guard let regionProviders = response.results[region],
+              let flatrate = regionProviders.flatrate else {
             return []
         }
 
@@ -98,16 +98,17 @@ actor TMDBService {
         mediaType: MediaType,
         providers: [StreamingPlatform] = [],
         genres: [Int] = [],
-        page: Int = 1
+        page: Int = 1,
+        region: String = "US"
     ) async throws -> [Media] {
         let providerIds = providers.map(\.tmdbProviderId)
 
         if mediaType == .movie {
-            let endpoint = TMDBEndpoint.discoverMovies(providers: providerIds, genres: genres, page: page)
+            let endpoint = TMDBEndpoint.discoverMovies(providers: providerIds, genres: genres, page: page, region: region)
             let response: TMDBPagedResponse<TMDBMovie> = try await client.fetch(endpoint)
             return response.results.map { $0.toMedia() }
         } else {
-            let endpoint = TMDBEndpoint.discoverTV(providers: providerIds, genres: genres, page: page)
+            let endpoint = TMDBEndpoint.discoverTV(providers: providerIds, genres: genres, page: page, region: region)
             let response: TMDBPagedResponse<TMDBTVShow> = try await client.fetch(endpoint)
             return response.results.map { $0.toMedia() }
         }

@@ -14,11 +14,11 @@ struct CategoryRowView: View {
 
                 Spacer()
 
-                Button("See All") {
-                    // Future: navigate to full list
+                NavigationLink(destination: SeeAllView(title: title, items: items)) {
+                    Text("See All")
+                        .font(TheaterTheme.caption)
+                        .foregroundStyle(TheaterTheme.accent)
                 }
-                .font(TheaterTheme.caption)
-                .foregroundStyle(TheaterTheme.accent)
             }
             .padding(.horizontal, TheaterTheme.spacingMD)
 
