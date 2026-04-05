@@ -52,8 +52,10 @@ struct Media: Identifiable, Hashable {
     }
 
     var isAnime: Bool {
-        genreIds.contains(Genre.animationId) &&
-        availablePlatforms.contains(.crunchyroll)
+        let isAnimation = genreIds.contains(Genre.animationId)
+        let onAnimeService = availablePlatforms.contains(.crunchyroll)
+        let hasAnimeGenres = genreIds.contains(Genre.animationId) && genreIds.contains(Genre.actionAdventureId)
+        return isAnimation && (onAnimeService || hasAnimeGenres)
     }
 
     // Hashable

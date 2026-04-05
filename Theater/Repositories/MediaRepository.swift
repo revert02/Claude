@@ -14,8 +14,10 @@ actor MediaRepository {
             media = try await tmdb.fetchTVDetail(id: id)
         }
 
+        let region = SidebarViewModel.shared.selectedRegion
+
         // Fetch RT ratings in parallel with watch providers
-        async let providers = tmdb.fetchWatchProviders(id: id, mediaType: mediaType)
+        async let providers = tmdb.fetchWatchProviders(id: id, mediaType: mediaType, region: region)
         async let credits = tmdb.fetchCredits(id: id, mediaType: mediaType)
         async let rtRatings = rt.fetchRatings(title: media.title, year: media.yearString)
 

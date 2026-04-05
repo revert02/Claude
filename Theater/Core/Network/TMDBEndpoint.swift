@@ -13,8 +13,8 @@ enum TMDBEndpoint: APIEndpoint {
     case tvWatchProviders(id: Int)
     case movieSimilar(id: Int)
     case tvSimilar(id: Int)
-    case discoverMovies(providers: [Int], genres: [Int], page: Int)
-    case discoverTV(providers: [Int], genres: [Int], page: Int)
+    case discoverMovies(providers: [Int], genres: [Int], page: Int, region: String = "US")
+    case discoverTV(providers: [Int], genres: [Int], page: Int, region: String = "US")
     case upcomingMovies(page: Int)
     case genreListMovie
     case genreListTV
@@ -76,10 +76,10 @@ enum TMDBEndpoint: APIEndpoint {
             items.append(URLQueryItem(name: "query", value: query))
             items.append(URLQueryItem(name: "page", value: "\(page)"))
 
-        case .discoverMovies(let providers, let genres, let page),
-             .discoverTV(let providers, let genres, let page):
+        case .discoverMovies(let providers, let genres, let page, let region),
+             .discoverTV(let providers, let genres, let page, let region):
             items.append(URLQueryItem(name: "page", value: "\(page)"))
-            items.append(URLQueryItem(name: "watch_region", value: "US"))
+            items.append(URLQueryItem(name: "watch_region", value: region))
             items.append(URLQueryItem(name: "sort_by", value: "popularity.desc"))
             if !providers.isEmpty {
                 items.append(URLQueryItem(
@@ -104,6 +104,6 @@ enum TMDBEndpoint: APIEndpoint {
 
 enum TMDBConfig {
     // Replace with your TMDB API key from https://www.themoviedb.org/settings/api
-    static let apiKey = "YOUR_TMDB_API_KEY"
+    static let apiKey = "8ebf6146d38c10e74873f2729e20afde"
     static let imageBaseURL = "https://image.tmdb.org/t/p/"
 }
