@@ -72,6 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (savedKey) {
         API_KEY = savedKey;
         startApp();
+    } else {
+        document.getElementById('apiKeyModal').classList.remove('hidden');
+        document.getElementById('app').classList.add('hidden');
     }
 
     document.getElementById('apiKeySubmit').onclick = () => {
