@@ -150,7 +150,23 @@ struct DetailView: View {
                 .background(isInWatchlist ? TheaterTheme.accent : TheaterTheme.surfaceLight)
                 .clipShape(RoundedRectangle(cornerRadius: TheaterTheme.cornerRadiusSM))
             }
+
+            Link(destination: torrentGalaxyURL) {
+                Label("Search Torrent", systemImage: "magnet")
+                    .font(TheaterTheme.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(TheaterTheme.surfaceLight)
+                    .clipShape(RoundedRectangle(cornerRadius: TheaterTheme.cornerRadiusSM))
+            }
         }
+    }
+
+    private var torrentGalaxyURL: URL {
+        let query = media.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? media.title
+        return URL(string: "https://torrentgalaxy.to/torrents.php?search=\(query)")!
     }
 
     private var overviewSection: some View {

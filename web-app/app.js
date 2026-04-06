@@ -249,6 +249,8 @@ function posterCardHTML(item) {
     const ratingClass = item.vote_average >= 7.5 ? 'high' : item.vote_average >= 5 ? 'mid' : 'low';
     const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
 
+    const torrentSearchURL = `https://torrentgalaxy.to/torrents.php?search=${encodeURIComponent(title)}`;
+
     return `
         <div class="poster-card" onclick="openDetail(${item.id}, '${mediaType}')">
             <div class="poster-img-wrap">
@@ -258,6 +260,13 @@ function posterCardHTML(item) {
                 ${rating > 0 ? `<span class="poster-rating ${ratingClass}">${rating}</span>` : ''}
             </div>
             <div class="poster-title">${escapeHTML(title)}</div>
+            <a class="torrent-search-link" href="${torrentSearchURL}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Search on TorrentGalaxy">
+                <svg class="torrent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7V4h16v3"/>
+                    <path d="M9 20h6"/>
+                    <path d="M12 4v16"/>
+                </svg>
+            </a>
         </div>`;
 }
 

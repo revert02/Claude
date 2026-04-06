@@ -433,6 +433,30 @@ body {
     overflow: hidden;
 }
 
+.torrent-search-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-light);
+    color: var(--text-secondary);
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+}
+
+.torrent-search-link:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.torrent-icon {
+    width: 16px;
+    height: 16px;
+}
+
 /* ============================================
    Search
    ============================================ */
