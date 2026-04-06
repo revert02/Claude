@@ -18,12 +18,18 @@ const PLATFORMS = {
 };
 
 const GENRES = [
-    { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' },
-    { id: 16, name: 'Animation' }, { id: 35, name: 'Comedy' },
-    { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' },
-    { id: 18, name: 'Drama' }, { id: 14, name: 'Fantasy' },
-    { id: 27, name: 'Horror' }, { id: 10749, name: 'Romance' },
-    { id: 878, name: 'Sci-Fi' }, { id: 53, name: 'Thriller' },
+    { id: 28, name: 'Action', icon: '💥', gradient: ['#FF416C','#FF4B2B'] },
+    { id: 12, name: 'Adventure', icon: '🗺️', gradient: ['#11998e','#38ef7d'] },
+    { id: 16, name: 'Animation', icon: '✨', gradient: ['#6441A5','#2a0845'] },
+    { id: 35, name: 'Comedy', icon: '😂', gradient: ['#F7971E','#FFD200'] },
+    { id: 80, name: 'Crime', icon: '🔍', gradient: ['#434343','#000000'] },
+    { id: 99, name: 'Documentary', icon: '🎥', gradient: ['#2193b0','#6dd5ed'] },
+    { id: 18, name: 'Drama', icon: '🎭', gradient: ['#C33764','#1D2671'] },
+    { id: 14, name: 'Fantasy', icon: '🧙', gradient: ['#7F00FF','#E100FF'] },
+    { id: 27, name: 'Horror', icon: '👻', gradient: ['#000000','#e74c3c'] },
+    { id: 10749, name: 'Romance', icon: '💕', gradient: ['#ee9ca7','#ffdde1'] },
+    { id: 878, name: 'Sci-Fi', icon: '🚀', gradient: ['#0F2027','#2C5364'] },
+    { id: 53, name: 'Thriller', icon: '🔪', gradient: ['#200122','#6f0000'] },
 ];
 
 // State
@@ -150,16 +156,16 @@ async function loadHome() {
 
         // Carousels
         const sections = [
-            { title: 'Trending Now', items: trending.results },
-            { title: 'New on Netflix', items: netflix.results },
-            { title: 'Top Anime', items: anime.results },
-            { title: 'Critically Acclaimed', items: popular.results.filter(m => m.vote_average >= 7.5) },
-            { title: 'Coming Soon', items: upcoming.results },
+            { title: 'Trending Now', icon: '🔥', items: trending.results },
+            { title: 'New on Netflix', icon: '🍿', items: netflix.results },
+            { title: 'Top Anime', icon: '⚡', items: anime.results },
+            { title: 'Critically Acclaimed', icon: '🏆', items: popular.results.filter(m => m.vote_average >= 7.5) },
+            { title: 'Coming Soon', icon: '📅', items: upcoming.results },
         ];
 
         carouselsEl.innerHTML = sections
             .filter(s => s.items.length > 0)
-            .map(s => renderCarouselHTML(s.title, s.items))
+            .map(s => renderCarouselHTML(s.title, s.items, s.icon))
             .join('');
 
     } catch (err) {
@@ -184,17 +190,24 @@ function renderHero(items) {
         const backdrop = imgURL(item.backdrop_path, 'w780') || imgURL(item.poster_path, 'w500');
         const rating = item.vote_average?.toFixed(1) || '—';
         const year = (item.release_date || item.first_air_date || '').slice(0, 4);
+        const genreNames = (item.genre_ids || []).slice(0, 2).map(id => {
+            const g = GENRES.find(g => g.id === id);
+            return g ? g.name : '';
+        }).filter(Boolean).join(' · ');
 
         return `
             <div class="hero-slide" onclick="openDetail(${item.id}, '${item.media_type || 'movie'}')">
                 ${backdrop ? `<img src="${backdrop}" alt="${title}" loading="${i === 0 ? 'eager' : 'lazy'}">` : '<div class="poster-placeholder">🎬</div>'}
                 <div class="hero-gradient"></div>
                 <div class="hero-info">
-                    <div class="hero-type">${type}</div>
+                    <div class="hero-chips">
+                        <span class="hero-type">${type}</span>
+                        ${genreNames ? `<span class="hero-genre">${genreNames}</span>` : ''}
+                    </div>
                     <div class="hero-title">${escapeHTML(title)}</div>
                     <div class="hero-meta">
-                        <span class="hero-rating">⭐ ${rating}</span>
-                        ${year ? `<span class="hero-year">${year}</span>` : ''}
+                        <span class="hero-rating">★ ${rating}</span>
+                        ${year ? `<span class="hero-divider">·</span><span class="hero-year">${year}</span>` : ''}
                     </div>
                     ${item.overview ? `<div class="hero-overview">${escapeHTML(item.overview)}</div>` : ''}
                 </div>
@@ -230,11 +243,11 @@ function renderHero(items) {
     });
 }
 
-function renderCarouselHTML(title, items) {
+function renderCarouselHTML(title, items, icon) {
     return `
         <div class="category-row">
             <div class="category-header">
-                <h2 class="category-title">${escapeHTML(title)}</h2>
+                <h2 class="category-title">${icon ? `<span class="category-icon">${icon}</span>` : ''}${escapeHTML(title)}</h2>
             </div>
             <div class="carousel">
                 ${items.map(item => posterCardHTML(item)).join('')}
@@ -248,6 +261,7 @@ function posterCardHTML(item) {
     const rating = item.vote_average?.toFixed(1);
     const ratingClass = item.vote_average >= 7.5 ? 'high' : item.vote_average >= 5 ? 'mid' : 'low';
     const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
+    const year = (item.release_date || item.first_air_date || '').slice(0, 4);
 
     return `
         <div class="poster-card" onclick="openDetail(${item.id}, '${mediaType}')">
@@ -255,9 +269,12 @@ function posterCardHTML(item) {
                 ${poster
                     ? `<img src="${poster}" alt="${escapeHTML(title)}" loading="lazy">`
                     : '<div class="poster-placeholder">🎬</div>'}
-                ${rating > 0 ? `<span class="poster-rating ${ratingClass}">${rating}</span>` : ''}
+                ${rating > 0 ? `<span class="poster-rating ${ratingClass}">★ ${rating}</span>` : ''}
             </div>
-            <div class="poster-title">${escapeHTML(title)}</div>
+            <div class="poster-info">
+                <div class="poster-title">${escapeHTML(title)}</div>
+                ${year ? `<div class="poster-year">${year}</div>` : ''}
+            </div>
         </div>`;
 }
 
@@ -527,7 +544,10 @@ function setupBrowseGenres() {
     document.getElementById('browseGenres').innerHTML = `
         <h3 style="grid-column:1/-1;font-size:20px;font-weight:700;padding:0 0 4px">Browse by Genre</h3>
         ${GENRES.map(g => `
-            <button class="genre-card" onclick="searchByGenre('${g.name}', ${g.id})">${g.name}</button>
+            <button class="genre-card" style="background:linear-gradient(135deg,${g.gradient[0]},${g.gradient[1]})" onclick="searchByGenre('${g.name}', ${g.id})">
+                <span class="genre-icon">${g.icon}</span>
+                <span class="genre-name">${g.name}</span>
+            </button>
         `).join('')}`;
 }
 
