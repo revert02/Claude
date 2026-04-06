@@ -9,12 +9,12 @@ let DEMO_MODE = false;
 
 // Platform definitions
 const PLATFORMS = {
-    netflix:     { id: 8,   name: 'Netflix',     color: '#E50914' },
-    disneyPlus:  { id: 337, name: 'Disney+',     color: '#0063E5' },
-    hboMax:      { id: 384, name: 'HBO Max',      color: '#B535F6' },
-    primeVideo:  { id: 9,   name: 'Prime Video',  color: '#00A8E1' },
-    appleTVPlus: { id: 350, name: 'Apple TV+',    color: '#A8A8A8' },
-    crunchyroll: { id: 283, name: 'Crunchyroll',  color: '#F47521' },
+    netflix:     { id: 8,   name: 'Netflix',     color: '#E50914', url: 'https://www.netflix.com/search?q=' },
+    disneyPlus:  { id: 337, name: 'Disney+',     color: '#0063E5', url: 'https://www.disneyplus.com/search?q=' },
+    hboMax:      { id: 384, name: 'HBO Max',      color: '#B535F6', url: 'https://play.max.com/search?q=' },
+    primeVideo:  { id: 9,   name: 'Prime Video',  color: '#00A8E1', url: 'https://www.amazon.com/s?i=instant-video&k=' },
+    appleTVPlus: { id: 350, name: 'Apple TV+',    color: '#A8A8A8', url: 'https://tv.apple.com/search?term=' },
+    crunchyroll: { id: 283, name: 'Crunchyroll',  color: '#F47521', url: 'https://www.crunchyroll.com/search?q=' },
 };
 
 const GENRES = [
@@ -59,6 +59,26 @@ async function tmdbFetch(path, params = {}) {
 function imgURL(path, size = 'w500') {
     if (!path) return null;
     return `${IMG_BASE}${size}${path}`;
+}
+
+async function fetchOMDbRatings(title, year) {
+    try {
+        const params = new URLSearchParams({ apikey: 'b2b11f5b', t: title });
+        if (year) params.set('y', year);
+        const res = await fetch(`https://www.omdbapi.com/?${params}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.Response === 'False') return null;
+        let rt = null;
+        for (const r of (data.Ratings || [])) {
+            if (r.Source === 'Rotten Tomatoes') {
+                rt = parseInt(r.Value);
+            }
+        }
+        return { rt, metascore: data.Metascore !== 'N/A' ? parseInt(data.Metascore) : null };
+    } catch {
+        return null;
+    }
 }
 
 // ============================================
@@ -339,10 +359,16 @@ async function openDetail(id, mediaType) {
         const genres = (detail.genres || []).map(g => g.name).join(' • ');
         const type = mediaType === 'movie' ? 'Movie' : 'TV Show';
 
-        // Watch providers
-        const usProviders = providers.results?.US?.flatrate || [];
+        // Watch providers with TMDB link
+        const usData = providers.results?.US || {};
+        const tmdbWatchLink = usData.link || null;
+        const usProviders = usData.flatrate || [];
         const matchedPlatforms = usProviders
-            .map(p => Object.values(PLATFORMS).find(pl => pl.id === p.provider_id))
+            .map(p => {
+                const platform = Object.values(PLATFORMS).find(pl => pl.id === p.provider_id);
+                if (!platform) return null;
+                return { ...platform, searchUrl: platform.url + encodeURIComponent(title) };
+            })
             .filter(Boolean);
 
         // Check watchlist
@@ -362,7 +388,7 @@ async function openDetail(id, mediaType) {
             </div>
             ${genres ? `<div class="detail-genres">${escapeHTML(genres)}</div>` : ''}
 
-            <div class="ratings-row">
+            <div class="ratings-row" id="ratingsRow">
                 ${detail.vote_average > 0 ? ratingCircleHTML(detail.vote_average, 'TMDB') : ''}
             </div>
 
@@ -377,9 +403,13 @@ async function openDetail(id, mediaType) {
                     <h3>Where to Watch</h3>
                     <div class="streaming-badges">
                         ${matchedPlatforms.map(p => `
-                            <span class="streaming-badge" style="background:${p.color}">${p.name}</span>
+                            <a href="${p.searchUrl}" target="_blank" rel="noopener" class="streaming-badge" style="background:${p.color}" onclick="event.stopPropagation()">
+                                ${p.name}
+                                <span class="badge-arrow">→</span>
+                            </a>
                         `).join('')}
                     </div>
+                    ${tmdbWatchLink ? `<a href="${tmdbWatchLink}" target="_blank" rel="noopener" class="watch-all-link" onclick="event.stopPropagation()">View all options on TMDB →</a>` : ''}
                 </div>` : ''}
 
             <div class="detail-section">
@@ -407,6 +437,21 @@ async function openDetail(id, mediaType) {
 
             ${similar.results?.length > 0 ? renderCarouselHTML('More Like This', similar.results.slice(0, 10)) : ''}
         `;
+
+        // Fetch RT ratings async (don't block initial render)
+        if (!DEMO_MODE) {
+            fetchOMDbRatings(title, year).then(ratings => {
+                const row = document.getElementById('ratingsRow');
+                if (ratings && row) {
+                    if (ratings.rt != null) {
+                        row.innerHTML += rtBadgeHTML(ratings.rt, 'Rotten Tomatoes');
+                    }
+                    if (ratings.metascore != null) {
+                        row.innerHTML += metascoreBadgeHTML(ratings.metascore);
+                    }
+                }
+            });
+        }
 
     } catch (err) {
         body.innerHTML = `
@@ -439,6 +484,26 @@ function ratingCircleHTML(score, label) {
                 <span class="score">${score.toFixed(1)}</span>
             </div>
             <span class="rating-label">${label}</span>
+        </div>`;
+}
+
+function rtBadgeHTML(score, label) {
+    const icon = score >= 60 ? '🍅' : '🤢';
+    const color = score >= 60 ? '#FA320A' : '#6C9E1E';
+    return `
+        <div class="rating-badge rt-badge" style="--badge-color:${color}">
+            <span class="badge-icon">${icon}</span>
+            <span class="badge-score">${score}%</span>
+            <span class="badge-label">${label}</span>
+        </div>`;
+}
+
+function metascoreBadgeHTML(score) {
+    const color = score >= 61 ? '#6C3' : score >= 40 ? '#FC3' : '#F00';
+    return `
+        <div class="rating-badge meta-badge">
+            <span class="meta-score" style="background:${color}">${score}</span>
+            <span class="badge-label">Metascore</span>
         </div>`;
 }
 

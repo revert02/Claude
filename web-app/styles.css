@@ -266,13 +266,39 @@ body {
 .rating-ring svg { transform: rotate(-90deg); }
 .rating-ring .score { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; }
 .rating-label { font-size: 10px; color: var(--text-dim); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* RT & Metascore badges */
+.rating-badge {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.badge-icon { font-size: 22px; }
+.badge-score { font-size: 16px; font-weight: 800; color: var(--text); }
+.badge-label { font-size: 10px; color: var(--text-dim); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.meta-score {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 6px;
+    font-size: 16px; font-weight: 800; color: #000;
+}
 .detail-actions { display: flex; gap: 8px; margin-bottom: 24px; }
 .action-btn { flex: 1; padding: 13px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--surface); color: var(--text); }
 .action-btn.primary.active { background: var(--accent); color: var(--bg); }
 .streaming-section { margin-bottom: 24px; }
 .streaming-section h3, .detail-section h3 { font-size: 12px; font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
-.streaming-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-.streaming-badge { padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; color: white; }
+.streaming-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.streaming-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    color: white; text-decoration: none; transition: transform 0.15s, opacity 0.15s;
+}
+.streaming-badge:active { transform: scale(0.95); opacity: 0.85; }
+.badge-arrow { font-size: 14px; opacity: 0.7; margin-left: 2px; }
+.watch-all-link {
+    display: inline-block; margin-top: 10px; font-size: 12px;
+    color: var(--text-mid); text-decoration: none; font-weight: 600;
+}
+.watch-all-link:active { color: var(--accent); }
 .detail-section { margin-bottom: 24px; }
 .detail-section p { font-size: 14px; color: var(--text-mid); line-height: 1.7; }
 .cast-scroll { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; }
