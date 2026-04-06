@@ -117,49 +117,85 @@ async function filterCategory(cat) {
 
     try {
         let sections = [];
+        const addTV = r => r.map(x => ({...x, media_type:'tv'}));
         if (cat === 'movie') {
-            const [popular, upcoming, action, comedy] = await Promise.all([
+            const [trending, popular, upcoming, topRated, action, comedy, scifi, thriller, horror] = await Promise.all([
+                tmdbFetch('/trending/movie/week'),
                 tmdbFetch('/movie/popular'),
                 tmdbFetch('/movie/upcoming'),
+                tmdbFetch('/movie/top_rated'),
                 tmdbFetch('/discover/movie', { with_genres: '28', sort_by: 'popularity.desc' }),
                 tmdbFetch('/discover/movie', { with_genres: '35', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/movie', { with_genres: '878', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/movie', { with_genres: '53', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/movie', { with_genres: '27', sort_by: 'popularity.desc' }),
             ]);
             sections = [
+                { title: 'Trending Films', items: trending.results },
                 { title: 'Popular Films', items: popular.results },
-                { title: 'Coming Soon', items: upcoming.results },
-                { title: 'Action Films', items: action.results },
+                { title: 'New Releases', items: upcoming.results },
+                { title: 'Critically Acclaimed', items: topRated.results },
+                { title: 'Action & Adventure', items: action.results },
                 { title: 'Comedies', items: comedy.results },
+                { title: 'Sci-Fi', items: scifi.results },
+                { title: 'Thrillers', items: thriller.results },
+                { title: 'Horror', items: horror.results },
             ];
         } else if (cat === 'tv') {
-            const [popular, topRated, drama, crime] = await Promise.all([
+            const [trending, popular, topRated, onAir, drama, crime, comedy, scifi] = await Promise.all([
+                tmdbFetch('/trending/tv/week'),
                 tmdbFetch('/tv/popular'),
                 tmdbFetch('/tv/top_rated'),
+                tmdbFetch('/tv/on_the_air'),
                 tmdbFetch('/discover/tv', { with_genres: '18', sort_by: 'popularity.desc' }),
                 tmdbFetch('/discover/tv', { with_genres: '80', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '35', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '10765', sort_by: 'popularity.desc' }),
             ]);
             sections = [
-                { title: 'Popular TV Shows', items: popular.results.map(r => ({...r, media_type:'tv'})) },
-                { title: 'Top Rated', items: topRated.results.map(r => ({...r, media_type:'tv'})) },
-                { title: 'Drama Series', items: drama.results.map(r => ({...r, media_type:'tv'})) },
-                { title: 'Crime Series', items: crime.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Trending TV Shows', items: addTV(trending.results) },
+                { title: 'Popular Right Now', items: addTV(popular.results) },
+                { title: 'New Episodes', items: addTV(onAir.results) },
+                { title: 'Critically Acclaimed', items: addTV(topRated.results) },
+                { title: 'Drama Series', items: addTV(drama.results) },
+                { title: 'Crime & Mystery', items: addTV(crime.results) },
+                { title: 'Comedy Series', items: addTV(comedy.results) },
+                { title: 'Sci-Fi & Fantasy', items: addTV(scifi.results) },
             ];
         } else if (cat === 'animation') {
-            const [movies, shows] = await Promise.all([
+            const [trendingM, movies, topMovies, shows, topShows, family] = await Promise.all([
+                tmdbFetch('/trending/movie/week'),
                 tmdbFetch('/discover/movie', { with_genres: '16', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/movie', { with_genres: '16', sort_by: 'vote_average.desc', 'vote_count.gte': 200 }),
                 tmdbFetch('/discover/tv', { with_genres: '16', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', sort_by: 'vote_average.desc', 'vote_count.gte': 200 }),
+                tmdbFetch('/discover/movie', { with_genres: '16,10751', sort_by: 'popularity.desc' }),
             ]);
+            const trendingAnim = trendingM.results.filter(r => r.genre_ids?.includes(16));
             sections = [
-                { title: 'Animated Films', items: movies.results },
-                { title: 'Animated Series', items: shows.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Trending Animation', items: trendingAnim.length > 3 ? trendingAnim : movies.results },
+                { title: 'Popular Animated Films', items: movies.results },
+                { title: 'Critically Acclaimed', items: topMovies.results },
+                { title: 'Animated Series', items: addTV(shows.results) },
+                { title: 'Top Rated Series', items: addTV(topShows.results) },
+                { title: 'Family Friendly', items: family.results },
             ];
         } else if (cat === 'anime') {
-            const [crunchyroll, topAnime] = await Promise.all([
-                tmdbFetch('/discover/tv', { with_watch_providers: '283', with_genres: '16', watch_region: 'US', sort_by: 'popularity.desc' }),
+            const [popular, topRated, action, romance, newAnime, fantasy] = await Promise.all([
                 tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024', sort_by: 'vote_average.desc', 'vote_count.gte': 100 }),
+                tmdbFetch('/discover/tv', { with_genres: '16,10759', with_keywords: '210024', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024,612', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024', sort_by: 'first_air_date.desc', 'vote_count.gte': 10 }),
+                tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024,9882', sort_by: 'popularity.desc' }),
             ]);
             sections = [
-                { title: 'Popular Anime', items: crunchyroll.results.map(r => ({...r, media_type:'tv'})) },
-                { title: 'Top Anime', items: topAnime.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Popular Anime', items: addTV(popular.results) },
+                { title: 'Critically Acclaimed', items: addTV(topRated.results) },
+                { title: 'Action Anime', items: addTV(action.results) },
+                { title: 'New Anime', items: addTV(newAnime.results) },
+                { title: 'Romance Anime', items: addTV(romance.results) },
+                { title: 'Fantasy Anime', items: addTV(fantasy.results) },
             ];
         }
 
@@ -299,7 +335,7 @@ async function openDetail(id, mediaType) {
 
     try {
         const ep = mediaType === 'movie' ? `/movie/${id}` : `/tv/${id}`;
-        const [detail, credits, providers, similar] = await Promise.all([
+        const [detail, credits, providers, similarRaw] = await Promise.all([
             tmdbFetch(ep),
             tmdbFetch(`${ep}/credits`).catch(() => ({ cast: [] })),
             tmdbFetch(`${ep}/watch/providers`).catch(() => ({ results: {} })),
@@ -371,7 +407,28 @@ async function openDetail(id, mediaType) {
                     </div>
                 </div>` : ''}
 
-            ${similar.results?.length > 0 ? buildRow('More Like This', similar.results.slice(0, 12)) : ''}
+            ${(() => {
+                // Filter similar content to match the source type
+                const genreIds = (detail.genres || []).map(g => g.id);
+                const isAnime = genreIds.includes(16) && mediaType === 'tv';
+                const isAnimation = genreIds.includes(16);
+                let filtered = (similarRaw.results || []).slice(0, 20);
+
+                if (isAnime) {
+                    // Only show animated TV (anime) as similar
+                    filtered = filtered.filter(r => r.genre_ids?.includes(16));
+                } else if (isAnimation && mediaType === 'movie') {
+                    // Only show animated movies
+                    filtered = filtered.filter(r => r.genre_ids?.includes(16));
+                } else if (mediaType === 'tv') {
+                    // For TV, prefer TV results
+                    filtered = filtered.filter(r => !r.genre_ids?.includes(16) || genreIds.includes(16));
+                }
+
+                // Set media_type for proper navigation
+                filtered = filtered.map(r => ({...r, media_type: r.media_type || mediaType}));
+                return filtered.length > 0 ? buildRow('More Like This', filtered.slice(0, 12)) : '';
+            })()}
         `;
 
         // Async RT ratings
