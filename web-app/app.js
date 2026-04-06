@@ -47,6 +47,9 @@ async function tmdbFetch(path, params = {}) {
 }
 
 function img(path, size = 'w500') { return path ? `${IMG_BASE}${size}${path}` : null; }
+function safe(r) { return (r && r.results) ? r.results : []; }
+function escAttr(s) { return esc(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+let searchReqId = 0;
 
 async function fetchOMDb(title, year) {
     try {
@@ -131,15 +134,15 @@ async function filterCategory(cat) {
                 tmdbFetch('/discover/movie', { with_genres: '27', sort_by: 'popularity.desc' }),
             ]);
             sections = [
-                { title: 'Trending Films', items: trending.results },
-                { title: 'Popular Films', items: popular.results },
-                { title: 'New Releases', items: upcoming.results },
-                { title: 'Critically Acclaimed', items: topRated.results },
-                { title: 'Action & Adventure', items: action.results },
-                { title: 'Comedies', items: comedy.results },
-                { title: 'Sci-Fi', items: scifi.results },
-                { title: 'Thrillers', items: thriller.results },
-                { title: 'Horror', items: horror.results },
+                { title: 'Trending Films', items: safe(trending) },
+                { title: 'Popular Films', items: safe(popular) },
+                { title: 'New Releases', items: safe(upcoming) },
+                { title: 'Critically Acclaimed', items: safe(topRated) },
+                { title: 'Action & Adventure', items: safe(action) },
+                { title: 'Comedies', items: safe(comedy) },
+                { title: 'Sci-Fi', items: safe(scifi) },
+                { title: 'Thrillers', items: safe(thriller) },
+                { title: 'Horror', items: safe(horror) },
             ];
         } else if (cat === 'tv') {
             const [trending, popular, topRated, onAir, drama, crime, comedy, scifi] = await Promise.all([
@@ -153,14 +156,14 @@ async function filterCategory(cat) {
                 tmdbFetch('/discover/tv', { with_genres: '10765', sort_by: 'popularity.desc' }),
             ]);
             sections = [
-                { title: 'Trending TV Shows', items: addTV(trending.results) },
-                { title: 'Popular Right Now', items: addTV(popular.results) },
-                { title: 'New Episodes', items: addTV(onAir.results) },
-                { title: 'Critically Acclaimed', items: addTV(topRated.results) },
-                { title: 'Drama Series', items: addTV(drama.results) },
-                { title: 'Crime & Mystery', items: addTV(crime.results) },
-                { title: 'Comedy Series', items: addTV(comedy.results) },
-                { title: 'Sci-Fi & Fantasy', items: addTV(scifi.results) },
+                { title: 'Trending TV Shows', items: addTV(safe(trending)) },
+                { title: 'Popular Right Now', items: addTV(safe(popular)) },
+                { title: 'New Episodes', items: addTV(safe(onAir)) },
+                { title: 'Critically Acclaimed', items: addTV(safe(topRated)) },
+                { title: 'Drama Series', items: addTV(safe(drama)) },
+                { title: 'Crime & Mystery', items: addTV(safe(crime)) },
+                { title: 'Comedy Series', items: addTV(safe(comedy)) },
+                { title: 'Sci-Fi & Fantasy', items: addTV(safe(scifi)) },
             ];
         } else if (cat === 'animation') {
             const [trendingM, movies, topMovies, shows, topShows, family] = await Promise.all([
@@ -171,14 +174,14 @@ async function filterCategory(cat) {
                 tmdbFetch('/discover/tv', { with_genres: '16', sort_by: 'vote_average.desc', 'vote_count.gte': 200 }),
                 tmdbFetch('/discover/movie', { with_genres: '16,10751', sort_by: 'popularity.desc' }),
             ]);
-            const trendingAnim = trendingM.results.filter(r => r.genre_ids?.includes(16));
+            const trendingAnim = safe(trendingM).filter(r => r.genre_ids?.includes(16));
             sections = [
-                { title: 'Trending Animation', items: trendingAnim.length > 3 ? trendingAnim : movies.results },
-                { title: 'Popular Animated Films', items: movies.results },
-                { title: 'Critically Acclaimed', items: topMovies.results },
-                { title: 'Animated Series', items: addTV(shows.results) },
-                { title: 'Top Rated Series', items: addTV(topShows.results) },
-                { title: 'Family Friendly', items: family.results },
+                { title: 'Trending Animation', items: trendingAnim.length > 3 ? trendingAnim : safe(movies) },
+                { title: 'Popular Animated Films', items: safe(movies) },
+                { title: 'Critically Acclaimed', items: safe(topMovies) },
+                { title: 'Animated Series', items: addTV(safe(shows)) },
+                { title: 'Top Rated Series', items: addTV(safe(topShows)) },
+                { title: 'Family Friendly', items: safe(family) },
             ];
         } else if (cat === 'anime') {
             const [popular, topRated, action, romance, newAnime, fantasy] = await Promise.all([
@@ -190,30 +193,30 @@ async function filterCategory(cat) {
                 tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024,9882', sort_by: 'popularity.desc' }),
             ]);
             sections = [
-                { title: 'Popular Anime', items: addTV(popular.results) },
-                { title: 'Critically Acclaimed', items: addTV(topRated.results) },
-                { title: 'Action Anime', items: addTV(action.results) },
-                { title: 'New Anime', items: addTV(newAnime.results) },
-                { title: 'Romance Anime', items: addTV(romance.results) },
-                { title: 'Fantasy Anime', items: addTV(fantasy.results) },
+                { title: 'Popular Anime', items: addTV(safe(popular)) },
+                { title: 'Critically Acclaimed', items: addTV(safe(topRated)) },
+                { title: 'Action Anime', items: addTV(safe(action)) },
+                { title: 'New Anime', items: addTV(safe(newAnime)) },
+                { title: 'Romance Anime', items: addTV(safe(romance)) },
+                { title: 'Fantasy Anime', items: addTV(safe(fantasy)) },
             ];
         }
 
         // Billboard from first section
-        const bbItem = sections[0]?.items[0];
-        if (bbItem) {
-            const mt = bbItem.media_type || 'movie';
-            bbBg.innerHTML = bbItem.backdrop_path ? `<img src="${img(bbItem.backdrop_path,'w780')}">` : '';
-            const t = bbItem.title || bbItem.name;
+        const bbItem2 = sections[0]?.items?.[0];
+        if (bbItem2) {
+            const mt = bbItem2.media_type || 'movie';
+            bbBg.innerHTML = bbItem2.backdrop_path ? `<img src="${img(bbItem2.backdrop_path,'w780')}">` : '';
+            const t = bbItem2.title || bbItem2.name;
             bbInfo.innerHTML = `
                 <div class="billboard-title">${esc(t)}</div>
                 <div class="billboard-buttons">
-                    <button class="btn-play" onclick="openDetail(${bbItem.id},'${mt}')">&#9654; Info</button>
-                    <button class="btn-list" onclick="quickAdd(${bbItem.id},'${mt}','${esc(t).replace(/'/g,"\\'")}','${bbItem.poster_path||''}',${bbItem.vote_average||0})">+ My List</button>
+                    <button class="btn-play" onclick="openDetail(${bbItem2.id},'${mt}')">&#9654; Info</button>
+                    <button class="btn-list" onclick="quickAdd(${bbItem2.id},'${mt}','${escAttr(t)}','${bbItem2.poster_path||''}',${bbItem2.vote_average||0})">+ My List</button>
                 </div>`;
         }
 
-        rowsEl.innerHTML = sections.filter(s => s.items.length).map(s => buildRow(s.title, s.items)).join('');
+        rowsEl.innerHTML = sections.filter(s => s.items?.length).map(s => buildRow(s.title, s.items)).join('');
     } catch (err) {
         rowsEl.innerHTML = `<div class="empty"><p>${err.message}</p></div>`;
     }
@@ -226,7 +229,7 @@ function switchTab(tab) {
         el.classList.toggle('active', el.dataset.tab === tab);
     });
     document.getElementById(`${tab}Tab`).classList.add('active');
-    if (tab === 'search') setTimeout(() => document.getElementById('searchInput').focus(), 100);
+    if (tab === 'search') { const si = document.getElementById('searchInput'); if (si) si.focus(); }
 }
 
 // ---- Home ----
@@ -249,8 +252,10 @@ async function loadHome() {
         ]);
 
         // Billboard — pick random from top 5 trending
-        const bbItem = trending.results[Math.floor(Math.random() * 5)];
+        const trendingItems = trending.results || [];
+        const bbItem = trendingItems[Math.floor(Math.random() * Math.min(5, trendingItems.length))];
         currentBillboard = bbItem;
+        if (!bbItem) { rowsEl.innerHTML = ''; return; }
         const bbType = bbItem.media_type || 'movie';
         const bbBackdrop = img(bbItem.backdrop_path, 'w780');
         const bbTitle = bbItem.title || bbItem.name;
@@ -265,19 +270,20 @@ async function loadHome() {
             </div>
             ${bbItem.overview ? `<div class="billboard-overview">${esc(bbItem.overview)}</div>` : ''}
             <div class="billboard-buttons">
-                <button class="btn-play" onclick="openDetail(${bbItem.id}, '${bbType}')">&#9654; Info</button>
-                <button class="btn-list" onclick="quickAdd(${bbItem.id}, '${bbType}', '${esc(bbTitle).replace(/'/g,"\\'")}', '${bbItem.poster_path||''}', ${bbItem.vote_average||0})">+ My List</button>
+                <button class="btn-play" onclick="openDetail(${bbItem.id},'${bbType}')">&#9654; Info</button>
+                <button class="btn-list" onclick="quickAdd(${bbItem.id},'${bbType}','${escAttr(bbTitle)}','${bbItem.poster_path||''}',${bbItem.vote_average||0})">+ My List</button>
             </div>`;
 
         // Build rows
-        const top10 = trending.results.slice(0, 10);
+        const tResults = safe(trending);
+        const top10 = tResults.slice(0, 10);
         let html = '';
         html += buildTop10Row('Top 10 This Week', top10);
-        html += buildRow('Trending Now', trending.results.slice(5));
-        html += buildRow('New on Netflix', netflix.results);
-        html += buildRow('Top Anime', anime.results);
-        html += buildRow('Critically Acclaimed', popular.results.filter(m => m.vote_average >= 7.5));
-        html += buildRow('Coming Soon', upcoming.results);
+        html += buildRow('Trending Now', tResults.slice(5));
+        html += buildRow('New on Netflix', safe(netflix));
+        html += buildRow('Top Anime', safe(anime).map(r => ({...r, media_type:'tv'})));
+        html += buildRow('Critically Acclaimed', safe(popular).filter(m => m.vote_average >= 7.5));
+        html += buildRow('Coming Soon', safe(upcoming));
         rowsEl.innerHTML = html;
 
     } catch (err) {
@@ -375,7 +381,7 @@ async function openDetail(id, mediaType) {
 
             <div class="detail-actions-row">
                 ${tmdbLink ? `<button class="nf-action-btn play" onclick="window.open('${tmdbLink}','_blank')">&#9654; Watch Now</button>` : '<button class="nf-action-btn play" disabled style="opacity:0.4">&#9654; Not Available</button>'}
-                <button class="nf-action-btn secondary ${inList?'active':''}" id="listBtn" onclick="toggleList(${id},'${mediaType}','${esc(title).replace(/'/g,"\\'")}','${detail.poster_path||''}',${detail.vote_average||0},${JSON.stringify((detail.genres||[]).map(g=>g.id))})">
+                <button class="nf-action-btn secondary ${inList?'active':''}" id="listBtn" onclick="toggleList(${id},'${mediaType}','${escAttr(title)}','${detail.poster_path||''}',${detail.vote_average||0},${JSON.stringify((detail.genres||[]).map(g=>g.id))})">
                     ${inList ? '✓ My List' : '+ My List'}
                 </button>
             </div>
@@ -533,7 +539,9 @@ async function performSearch(query) {
     const el = document.getElementById('searchResults');
     const empty = document.getElementById('searchEmpty');
     const browse = document.getElementById('browseGenres');
+    if (!el || !empty || !browse) return;
     query = (query || '').trim();
+    const myReqId = ++searchReqId;
 
     if (!query && !activeSearchFilters.platforms.size && !activeSearchFilters.genres.size) {
         el.innerHTML = ''; empty.classList.add('hidden'); browse.classList.remove('hidden'); return;
@@ -549,18 +557,19 @@ async function performSearch(query) {
                 tmdbFetch('/discover/movie', { sort_by: 'popularity.desc', watch_region: 'US', with_watch_providers: [...activeSearchFilters.platforms].map(k => PLATFORMS[k].id).join('|') }),
                 tmdbFetch('/discover/tv', { sort_by: 'popularity.desc', watch_region: 'US', with_watch_providers: [...activeSearchFilters.platforms].map(k => PLATFORMS[k].id).join('|') }),
             ]);
-            const ids = new Set([...dm.results.map(r=>r.id), ...dt.results.map(r=>r.id)]);
-            results = s.results.filter(r => (r.media_type==='movie'||r.media_type==='tv') && ids.has(r.id));
+            const ids = new Set([...safe(dm).map(r=>r.id), ...safe(dt).map(r=>r.id)]);
+            results = safe(s).filter(r => (r.media_type==='movie'||r.media_type==='tv') && ids.has(r.id));
         } else if (query) {
-            results = (await tmdbFetch('/search/multi', { query, page: 1 })).results.filter(r => r.media_type==='movie'||r.media_type==='tv');
+            results = safe(await tmdbFetch('/search/multi', { query, page: 1 })).filter(r => r.media_type==='movie'||r.media_type==='tv');
         } else {
             const p = { sort_by: 'popularity.desc', watch_region: 'US' };
             if (activeSearchFilters.platforms.size) p.with_watch_providers = [...activeSearchFilters.platforms].map(k=>PLATFORMS[k].id).join('|');
             if (activeSearchFilters.genres.size) p.with_genres = [...activeSearchFilters.genres].join(',');
-            results = (await tmdbFetch('/discover/movie', p)).results.map(r=>({...r, media_type:'movie'}));
+            results = safe(await tmdbFetch('/discover/movie', p)).map(r=>({...r, media_type:'movie'}));
         }
         if (query && activeSearchFilters.genres.size) results = results.filter(r => r.genre_ids?.some(id => activeSearchFilters.genres.has(id)));
 
+        if (myReqId !== searchReqId) return; // stale request, discard
         if (!results.length) { el.innerHTML = ''; empty.classList.remove('hidden'); }
         else { empty.classList.add('hidden'); el.innerHTML = results.map(cardHTML).join(''); }
     } catch (err) {
@@ -575,11 +584,16 @@ function setupBrowseGenres() {
 }
 
 function searchByGenre(name, id) {
-    document.getElementById('searchInput').value = name;
+    // Clear existing filters first
+    activeSearchFilters.platforms.clear();
+    activeSearchFilters.genres.clear();
+    document.querySelectorAll('.nf-chip.active').forEach(b => b.classList.remove('active'));
+    // Set the genre
+    document.getElementById('searchInput').value = '';
     activeSearchFilters.genres.add(id);
     const b = document.querySelector(`[data-genre="${id}"]`);
     if (b) b.classList.add('active');
-    performSearch(name);
+    performSearch('');
 }
 
 // ---- Demo ----
