@@ -1,0 +1,57 @@
+DEPLOYMENT WORKFLOW — Theater Web App (gh-pages → iPhone PWA)
+=============================================================
+
+BRANCHES:
+- Feature branch: claude/finish-remaining-work-5ctEI (where you edit code)
+- Deploy branch: gh-pages (what GitHub Pages serves)
+- Live URL: https://revert02.github.io/Claude/
+
+SOURCE FILES (edit these):
+- web-app/index.html
+- web-app/app.js
+- web-app/styles.css
+
+DEPLOYED FILES (root of gh-pages branch):
+- index.html
+- app.js
+- styles.css
+- manifest.json
+
+STEP-BY-STEP DEPLOY:
+
+1. Make changes in web-app/ on the feature branch
+2. Commit and push to feature branch:
+   git add web-app/
+   git commit -m "description"
+   git push -u origin claude/finish-remaining-work-5ctEI
+
+3. Deploy to gh-pages:
+   git checkout gh-pages
+   git checkout claude/finish-remaining-work-5ctEI -- web-app/index.html web-app/styles.css web-app/app.js
+   cp web-app/index.html index.html
+   cp web-app/styles.css styles.css
+   cp web-app/app.js app.js
+   git checkout -- web-app/
+   git add index.html styles.css app.js
+   git commit -m "deploy: description"
+   git push origin gh-pages
+   git checkout claude/finish-remaining-work-5ctEI
+
+CACHE BUSTING (CRITICAL for iPhone):
+- index.html references: styles.css?v=XXX and app.js?v=XXX
+- You MUST bump the ?v= parameter on each deploy
+- Otherwise iOS Safari serves stale cached JS/CSS
+- Example: change ?v=20260406b to ?v=20260406c
+
+WHY ROOT COPIES EXIST:
+- GitHub Pages serves from root of gh-pages branch
+- web-app/ subfolder is NOT served directly
+- So we copy web-app/* files to root on each deploy
+- The web-app/ folder on gh-pages is stale, always overwrite from feature branch
+
+NOTES:
+- git checkout gh-pages reverts working tree to that branch's state
+  so web-app/ files revert — that's why we checkout from feature branch
+- The modal starts hidden and app starts visible (API key is hardcoded)
+- manifest.json uses start_url: "." (relative) for PWA home screen launch
+- API keys: TMDB key hardcoded in app.js line 4, OMDb key in fetchOMDb()
