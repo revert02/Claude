@@ -20,7 +20,26 @@ struct PosterCardView: View {
                 .foregroundStyle(TheaterTheme.textPrimary)
                 .lineLimit(2)
                 .frame(width: width, alignment: .leading)
+
+            torrentSearchButton
         }
+    }
+
+    private var torrentSearchButton: some View {
+        Link(destination: torrentGalaxyURL) {
+            Image(systemName: "magnet")
+                .font(.system(size: 12))
+                .foregroundStyle(TheaterTheme.textSecondary)
+                .frame(width: 24, height: 24)
+                .background(TheaterTheme.surfaceLight)
+                .clipShape(Circle())
+        }
+        .frame(width: width, alignment: .leading)
+    }
+
+    private var torrentGalaxyURL: URL {
+        let query = media.title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? media.title
+        return URL(string: "https://torrentgalaxy.to/torrents.php?search=\(query)")!
     }
 
     private var ratingBadge: some View {
