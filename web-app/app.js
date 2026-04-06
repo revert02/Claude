@@ -281,7 +281,6 @@ function renderCarouselHTML(title, items, icon) {
             </div>
         </div>`;
 }
-}
 
 function posterCardHTML(item) {
     const title = item.title || item.name || '';
