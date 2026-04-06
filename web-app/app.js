@@ -241,7 +241,7 @@ async function openDetail(id, mediaType) {
         const flatrate = usData.flatrate || [];
         const matched = flatrate.map(p => {
             const pl = Object.values(PLATFORMS).find(x => x.id === p.provider_id);
-            return pl ? { ...pl, href: pl.url + encodeURIComponent(title) } : null;
+            return pl || null;
         }).filter(Boolean);
 
         backdrop.innerHTML = `<button class="nf-close" onclick="closeDetail()">&#10005;</button>
@@ -258,7 +258,7 @@ async function openDetail(id, mediaType) {
             ${genres ? `<div class="detail-genres">${esc(genres)}</div>` : ''}
 
             <div class="detail-actions-row">
-                <button class="nf-action-btn play" onclick="if(${matched.length}){window.open('${matched[0]?.href||''}','_blank')}">&#9654; Play</button>
+                ${tmdbLink ? `<button class="nf-action-btn play" onclick="window.open('${tmdbLink}','_blank')">&#9654; Watch Now</button>` : '<button class="nf-action-btn play" disabled style="opacity:0.4">&#9654; Not Available</button>'}
                 <button class="nf-action-btn secondary ${inList?'active':''}" id="listBtn" onclick="toggleList(${id},'${mediaType}','${esc(title).replace(/'/g,"\\'")}','${detail.poster_path||''}',${detail.vote_average||0},${JSON.stringify((detail.genres||[]).map(g=>g.id))})">
                     ${inList ? '✓ My List' : '+ My List'}
                 </button>
@@ -274,9 +274,9 @@ async function openDetail(id, mediaType) {
                 <div class="streaming-section">
                     <h3>Available on</h3>
                     <div class="streaming-links">
-                        ${matched.map(p => `<a href="${p.href}" target="_blank" rel="noopener" class="streaming-link" style="background:${p.color}" onclick="event.stopPropagation()">${p.name} →</a>`).join('')}
+                        ${matched.map(p => `<span class="streaming-link" style="background:${p.color}">${p.name}</span>`).join('')}
                     </div>
-                    ${tmdbLink ? `<a href="${tmdbLink}" target="_blank" rel="noopener" class="watch-all-link">All watch options →</a>` : ''}
+                    ${tmdbLink ? `<a href="${tmdbLink}" target="_blank" rel="noopener" class="watch-all-link" onclick="event.stopPropagation()">View all watch options →</a>` : ''}
                 </div>` : ''}
 
             ${credits.cast?.length > 0 ? `
