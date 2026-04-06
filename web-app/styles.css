@@ -66,6 +66,20 @@ body {
     -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
 }
 
+/* ---- Category Pills (Netflix-style filter row) ---- */
+.category-pills {
+    display: flex; gap: 8px; padding: 8px 12px;
+    padding-top: calc(48px + var(--safe-top));
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(180deg, var(--bg) 60%, transparent 100%);
+}
+.cat-pill {
+    flex-shrink: 0; padding: 6px 14px; background: transparent;
+    border: 1px solid #666; border-radius: 20px; color: white;
+    font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
+}
+.cat-pill.active { background: white; color: black; border-color: white; font-weight: 700; }
+
 /* ---- Netflix Header ---- */
 .nf-header {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;

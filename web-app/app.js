@@ -103,6 +103,86 @@ function startApp() {
     renderWatchlist();
 }
 
+// ---- Category filter ----
+async function filterCategory(cat) {
+    document.querySelectorAll('.cat-pill').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+    if (cat === 'all') { loadHome(); return; }
+
+    const rowsEl = document.getElementById('rows');
+    const bbBg = document.getElementById('billboardBg');
+    const bbInfo = document.getElementById('billboardInfo');
+    bbBg.innerHTML = '<div class="shimmer shimmer-billboard"></div>';
+    bbInfo.innerHTML = '';
+    rowsEl.innerHTML = Array(3).fill('').map(() => shimmerRow()).join('');
+
+    try {
+        let sections = [];
+        if (cat === 'movie') {
+            const [popular, upcoming, action, comedy] = await Promise.all([
+                tmdbFetch('/movie/popular'),
+                tmdbFetch('/movie/upcoming'),
+                tmdbFetch('/discover/movie', { with_genres: '28', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/movie', { with_genres: '35', sort_by: 'popularity.desc' }),
+            ]);
+            sections = [
+                { title: 'Popular Films', items: popular.results },
+                { title: 'Coming Soon', items: upcoming.results },
+                { title: 'Action Films', items: action.results },
+                { title: 'Comedies', items: comedy.results },
+            ];
+        } else if (cat === 'tv') {
+            const [popular, topRated, drama, crime] = await Promise.all([
+                tmdbFetch('/tv/popular'),
+                tmdbFetch('/tv/top_rated'),
+                tmdbFetch('/discover/tv', { with_genres: '18', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '80', sort_by: 'popularity.desc' }),
+            ]);
+            sections = [
+                { title: 'Popular TV Shows', items: popular.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Top Rated', items: topRated.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Drama Series', items: drama.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Crime Series', items: crime.results.map(r => ({...r, media_type:'tv'})) },
+            ];
+        } else if (cat === 'animation') {
+            const [movies, shows] = await Promise.all([
+                tmdbFetch('/discover/movie', { with_genres: '16', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', sort_by: 'popularity.desc' }),
+            ]);
+            sections = [
+                { title: 'Animated Films', items: movies.results },
+                { title: 'Animated Series', items: shows.results.map(r => ({...r, media_type:'tv'})) },
+            ];
+        } else if (cat === 'anime') {
+            const [crunchyroll, topAnime] = await Promise.all([
+                tmdbFetch('/discover/tv', { with_watch_providers: '283', with_genres: '16', watch_region: 'US', sort_by: 'popularity.desc' }),
+                tmdbFetch('/discover/tv', { with_genres: '16', with_keywords: '210024', sort_by: 'popularity.desc' }),
+            ]);
+            sections = [
+                { title: 'Popular Anime', items: crunchyroll.results.map(r => ({...r, media_type:'tv'})) },
+                { title: 'Top Anime', items: topAnime.results.map(r => ({...r, media_type:'tv'})) },
+            ];
+        }
+
+        // Billboard from first section
+        const bbItem = sections[0]?.items[0];
+        if (bbItem) {
+            const mt = bbItem.media_type || 'movie';
+            bbBg.innerHTML = bbItem.backdrop_path ? `<img src="${img(bbItem.backdrop_path,'w780')}">` : '';
+            const t = bbItem.title || bbItem.name;
+            bbInfo.innerHTML = `
+                <div class="billboard-title">${esc(t)}</div>
+                <div class="billboard-buttons">
+                    <button class="btn-play" onclick="openDetail(${bbItem.id},'${mt}')">&#9654; Info</button>
+                    <button class="btn-list" onclick="quickAdd(${bbItem.id},'${mt}','${esc(t).replace(/'/g,"\\'")}','${bbItem.poster_path||''}',${bbItem.vote_average||0})">+ My List</button>
+                </div>`;
+        }
+
+        rowsEl.innerHTML = sections.filter(s => s.items.length).map(s => buildRow(s.title, s.items)).join('');
+    } catch (err) {
+        rowsEl.innerHTML = `<div class="empty"><p>${err.message}</p></div>`;
+    }
+}
+
 // ---- Navigation ----
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));

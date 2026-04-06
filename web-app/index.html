@@ -38,6 +38,14 @@
             <!-- Home -->
             <div id="homeTab" class="tab-content active">
                 <div class="scrollable" id="homeScroll">
+                    <!-- Category pills -->
+                    <div class="category-pills" id="categoryPills">
+                        <button class="cat-pill active" data-cat="all" onclick="filterCategory('all')">All</button>
+                        <button class="cat-pill" data-cat="movie" onclick="filterCategory('movie')">Films</button>
+                        <button class="cat-pill" data-cat="tv" onclick="filterCategory('tv')">TV Shows</button>
+                        <button class="cat-pill" data-cat="animation" onclick="filterCategory('animation')">Animation</button>
+                        <button class="cat-pill" data-cat="anime" onclick="filterCategory('anime')">Anime</button>
+                    </div>
                     <!-- Billboard -->
                     <div id="billboard" class="billboard">
                         <div class="billboard-bg" id="billboardBg"></div>
