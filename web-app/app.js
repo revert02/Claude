@@ -156,16 +156,16 @@ async function loadHome() {
 
         // Carousels
         const sections = [
-            { title: 'Trending Now', icon: '🔥', items: trending.results },
-            { title: 'New on Netflix', icon: '🍿', items: netflix.results },
-            { title: 'Top Anime', icon: '⚡', items: anime.results },
-            { title: 'Critically Acclaimed', icon: '🏆', items: popular.results.filter(m => m.vote_average >= 7.5) },
-            { title: 'Coming Soon', icon: '📅', items: upcoming.results },
+            { title: 'Trending Now', items: trending.results },
+            { title: 'New on Netflix', items: netflix.results },
+            { title: 'Top Anime', items: anime.results },
+            { title: 'Critically Acclaimed', items: popular.results.filter(m => m.vote_average >= 7.5) },
+            { title: 'Coming Soon', items: upcoming.results },
         ];
 
         carouselsEl.innerHTML = sections
             .filter(s => s.items.length > 0)
-            .map(s => renderCarouselHTML(s.title, s.items, s.icon))
+            .map(s => renderCarouselHTML(s.title, s.items))
             .join('');
 
     } catch (err) {
@@ -244,15 +244,40 @@ function renderHero(items) {
 }
 
 function renderCarouselHTML(title, items, icon) {
+    // First item is a featured large card, rest are small in a row
+    const featured = items[0];
+    const rest = items.slice(1);
+    const featuredType = featured?.media_type || (featured?.first_air_date ? 'tv' : 'movie');
+    const featuredBackdrop = imgURL(featured?.backdrop_path, 'w780');
+    const featuredTitle = featured?.title || featured?.name || '';
+    const featuredRating = featured?.vote_average?.toFixed(1);
+    const featuredYear = (featured?.release_date || featured?.first_air_date || '').slice(0, 4);
+
     return `
         <div class="category-row">
             <div class="category-header">
-                <h2 class="category-title">${icon ? `<span class="category-icon">${icon}</span>` : ''}${escapeHTML(title)}</h2>
+                <h2 class="category-title">${escapeHTML(title)}</h2>
+                <span class="category-count">${items.length}</span>
             </div>
+            ${featured ? `
+            <div class="featured-card" onclick="openDetail(${featured.id}, '${featuredType}')">
+                <div class="featured-img">
+                    ${featuredBackdrop ? `<img src="${featuredBackdrop}" alt="${escapeHTML(featuredTitle)}" loading="lazy">` : ''}
+                    <div class="featured-overlay"></div>
+                    <div class="featured-info">
+                        <div class="featured-title">${escapeHTML(featuredTitle)}</div>
+                        <div class="featured-meta">
+                            ${featuredRating > 0 ? `<span class="featured-rating">★ ${featuredRating}</span>` : ''}
+                            ${featuredYear ? `<span>${featuredYear}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>` : ''}
             <div class="carousel">
-                ${items.map(item => posterCardHTML(item)).join('')}
+                ${rest.map(item => posterCardHTML(item)).join('')}
             </div>
         </div>`;
+}
 }
 
 function posterCardHTML(item) {
@@ -261,20 +286,16 @@ function posterCardHTML(item) {
     const rating = item.vote_average?.toFixed(1);
     const ratingClass = item.vote_average >= 7.5 ? 'high' : item.vote_average >= 5 ? 'mid' : 'low';
     const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
-    const year = (item.release_date || item.first_air_date || '').slice(0, 4);
 
     return `
         <div class="poster-card" onclick="openDetail(${item.id}, '${mediaType}')">
             <div class="poster-img-wrap">
                 ${poster
                     ? `<img src="${poster}" alt="${escapeHTML(title)}" loading="lazy">`
-                    : '<div class="poster-placeholder">🎬</div>'}
-                ${rating > 0 ? `<span class="poster-rating ${ratingClass}">★ ${rating}</span>` : ''}
+                    : '<div class="poster-placeholder"></div>'}
+                ${rating > 0 ? `<span class="poster-rating ${ratingClass}">${rating}</span>` : ''}
             </div>
-            <div class="poster-info">
-                <div class="poster-title">${escapeHTML(title)}</div>
-                ${year ? `<div class="poster-year">${year}</div>` : ''}
-            </div>
+            <div class="poster-title">${escapeHTML(title)}</div>
         </div>`;
 }
 
@@ -544,9 +565,8 @@ function setupBrowseGenres() {
     document.getElementById('browseGenres').innerHTML = `
         <h3 style="grid-column:1/-1;font-size:20px;font-weight:700;padding:0 0 4px">Browse by Genre</h3>
         ${GENRES.map(g => `
-            <button class="genre-card" style="background:linear-gradient(135deg,${g.gradient[0]},${g.gradient[1]})" onclick="searchByGenre('${g.name}', ${g.id})">
-                <span class="genre-icon">${g.icon}</span>
-                <span class="genre-name">${g.name}</span>
+            <button class="genre-card" style="--g1:${g.gradient[0]};--g2:${g.gradient[1]}" onclick="searchByGenre('${g.name}', ${g.id})">
+                ${g.name}
             </button>
         `).join('')}`;
 }
